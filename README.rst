@@ -54,9 +54,9 @@ retrieve the first name of the first commit, you would do the following: ::
   else:
     print("success")
 
-Since the incoming JSON can't be trusted, you have to verify that each layer is
-there.  This can be done with a ``try:`` ``except``, nearly as efficiently, but
-it is more verbose. ::
+Since the incoming JSON can't be trusted, without magic_dot, you have to verify that 
+each layer is there.  This can be done with a ``try:`` ``except``, nearly as
+efficiently, but it is more verbose. ::
 
   try:
     name = md[0]['payload']['commits'][0]['author']['name']
@@ -99,12 +99,12 @@ this until the ``get()`` call that extracts the data at the end.
 When the ``get()`` is called, there are three ways of handling
 missing data:
 
-**Default is to return ``magic_dot.NOT_FOUND``** ::
+**Default is to return magic_dot.NOT_FOUND** ::
 
   In [1]: md.nonexistent.get()
   Out[1]: magic_dot.NOT_FOUND
 
-**You can request a default value for ``magic_dot.NOT_FOUND``** ::
+**You can request a default value for magic_dot.NOT_FOUND** ::
 
   In [2]: md.nonexistent.get('bubba')
   Out[2]: 'bubba'
