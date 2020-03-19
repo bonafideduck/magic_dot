@@ -57,6 +57,7 @@ retrieve the first name of the first commit, you would do the following: ::
 Since the incoming JSON can't be trusted, you have to verify that each layer is
 there.  This can be done with a ``try:`` ``except``, nearly as efficiently, but
 it is more verbose. ::
+
   try:
     name = md[0]['payload']['commits'][0]['author']['name']
   except (IndexError, KeyError):
