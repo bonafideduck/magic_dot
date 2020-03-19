@@ -45,6 +45,7 @@ snipppet curl https://api.github.com/events: ::
 ``magic_dot`` has a process of wrapping the data for easier extraction without
 the need for complex ``setdefault`` or ``try:`` ``except``.  For example, to
 retrieve the first name of the first commit, you would do the following: ::
+
   from magic_dot import MagicDot, NOT_FOUND
   md = MagicDot(data)
   md[0].payload.commits[0].author.name.get()
