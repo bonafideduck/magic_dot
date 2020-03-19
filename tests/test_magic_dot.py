@@ -83,11 +83,13 @@ def test_date():
     md = MagicDot([nt, None, nt])
     assert md.lists(False)[1].get() is None
 
+
 def test_both():
     """Test that exception is enabled with init."""
     md = MagicDot({}, exception=True)
     with pytest.raises(NotFound):
         md.nonexistent.get()
+
 
 def test_been():
     """Test that exception is enabled with exception."""
@@ -95,27 +97,30 @@ def test_been():
     with pytest.raises(NotFound):
         md.exception().nonexistent.get()
 
+
 def test_curve():
     """Test that exception is enabled with exception after attribute."""
     md = MagicDot({})
     with pytest.raises(NotFound):
         md.nonexistent.exception().get()
 
+
 def test_hair():
     """Test that exception does not happen with a default."""
     md = MagicDot({}, exception=True)
     assert md.nonexistent.get(0) == 0
+
 
 def test_hay():
     """Test that exception happens in list processing."""
     nt = namedtuple("NT", "x")(1)
     md = MagicDot([None, nt, nt], exception=True)
     with pytest.raises(NotFound):
-        md.x.get() # ([NOT_FOUND, 1, 1])
+        md.x.get()  # ([NOT_FOUND, 1, 1])
+
 
 def test_fully():
     """Test that exception does not happen if list processing replaces NOT_FOUND with defaults"""
     nt = namedtuple("NT", "x")(1)
     md = MagicDot([None, nt, nt], exception=True)
     assert md.x.get(0) == [0, 1, 1]
-
