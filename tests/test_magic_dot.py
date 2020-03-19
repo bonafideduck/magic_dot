@@ -124,6 +124,3 @@ def test_fully():
     nt = namedtuple("NT", "x")(1)
     md = MagicDot([None, nt, nt], exception=True)
     assert md.x.get(0) == [0, 1, 1]
-
-def test_github_actions():
-    assert 1 == 2
