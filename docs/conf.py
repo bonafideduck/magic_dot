@@ -19,9 +19,9 @@
 #
 import os
 import sys
-import magic_dot
 
 sys.path.insert(0, os.path.abspath(".."))
+import magic_dot  # noqa: E402
 
 
 # -- General configuration ---------------------------------------------
