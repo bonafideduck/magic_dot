@@ -5,6 +5,9 @@ Magic Dot
 .. image:: https://img.shields.io/pypi/v/magic_dot.svg
         :target: https://pypi.python.org/pypi/magic_dot
 
+.. image:: https://img.shields.io/pypi/dm/magic_dot.svg
+        :target: https://pypi.python.org/pypi/magic_dot
+
 .. image:: https://github.com/bonafideduck/magic_dot/workflows/Sanity/badge.svg
         :target: https://github.com/bonafideduck/magic_dot/actions?query=branch%3Amaster+workflow%3A%22Sanity%22
 
