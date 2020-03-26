@@ -51,7 +51,7 @@ retrieve the first name of the first commit, you would do the following: ::
 
   from magic_dot import MagicDot, NOT_FOUND
   md = MagicDot(data)
-  md[0].payload.commits[0].author.name.get()
+  name = md[0].payload.commits[0].author.name.get()
   if name is NOT_FOUND:
     print("handle error")
   else:
