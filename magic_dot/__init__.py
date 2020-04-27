@@ -25,28 +25,27 @@ NOT_FOUND = _NotFound()
 class MagicDot:
     """A wrapper that allows data extraction without all the `try` and `except` overhead."""
 
-    def __init__(self, data: Any, lists: bool = True, exception: bool = False):
+    def __init__(self, data: Any, lists: bool = True, exception: bool = False, iter_nf_as_empty: bool = False):
         """Main data wrapper for the MagicDot module
 
         Args:
            data: The data to be wrapped by MagicDot
            lists: Selects if expanded list support is enabled (see MagicDot.lists for more info.)
            exception: Selects if an exception is raised when get() would return magic_dot.NOT_FOUND
-
-        Kwargs:
-           bar (str): Really, same as foo.
-
+           iter_nf_as_empty: Selects if iterating over NOT_FOUND should return an empty iterator.
         """
         self.__data = data
         self.__lists = lists
         self.__exception = exception
+        self.__iter_nf_as_empty = iter_nf_as_empty
 
     def __create_child(
-        self, data, lists: Optional[bool] = None, exception: Optional[bool] = None
+        self, data, lists: Optional[bool] = None, exception: Optional[bool] = None, iter_nf_as_empty: Optional[bool] = None
     ):
         lists = self.__lists if lists is None else lists
         exception = self.__exception if exception is None else exception
-        return MagicDot(data, lists=lists, exception=exception)
+        iter_nf_as_empty = self.__iter_nf_as_empty if iter_nf_as_empty is None else iter_nf_as_empty
+        return MagicDot(data, lists=lists, exception=exception, iter_nf_as_empty=iter_nf_as_empty)
 
     def __bool__(self):
         raise RuntimeError(
@@ -112,6 +111,26 @@ class MagicDot:
                     data = NOT_FOUND
 
         return self.__create_child(data)
+        
+    def __iter__(self):
+        """Contains iterator creatiion support for MagicDot.
+
+        If an attempt is made to iterate over a MagicDot instance and the data
+        is iterable, this supports walking those contents where the contents
+        will also be wrapped in the MagicDot structure.
+
+        If the data contained is NOT_FOUND, the current iter_nf_as_empty state 
+        of the MagicDot instance is checked.  If not set, a TypeError will be
+        raised.  If set, an empty iterator will be returned.
+
+        Returns:
+            The data held withing this MagicDot instance.
+        """
+        if self.__data is NOT_FOUND and self.__iter_nf_as_empty:
+            return iter(())
+        else:
+            return (self.__create_child(x) for x in self.__data)
+
 
     def lists(self, lists: bool = True) -> "MagicDot":
         """Enable or disable expanded list support.
@@ -148,6 +167,22 @@ class MagicDot:
             return self
         else:
             return self.__create_child(self.__data, exception=exception)
+ 
+    def iter_nf_as_empty(self, iter_nf_as_empty: bool = True) -> "MagicDot":
+        """Enable or disable empty iterator support for NOT_FOUND data.
+
+        Args:
+            iter_nf_as_empty: Enable or Disable
+
+        Returns:
+            If the lists changes, a new MagicDot will be returned.  Otherwise,
+            this returns self.
+        """
+        if self.__iter_nf_as_empty == iter_nf_as_empty:
+            return self
+        else:
+            return self.__create_child(self.__data, iter_nf_as_empty=iter_nf_as_empty)
+
 
     def get(self, not_found: Any = NOT_FOUND, exception: bool = None):
         """Gets the data held within this MagicDot.
@@ -177,5 +212,3 @@ class MagicDot:
                 raise NotFound
         return self.__data
 
-    def __iter__(self):
-        return iter(())
