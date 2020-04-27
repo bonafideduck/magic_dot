@@ -176,3 +176,6 @@ class MagicDot:
             if exception and NOT_FOUND in self.__data:
                 raise NotFound
         return self.__data
+
+    def __iter__(self):
+        return iter(())

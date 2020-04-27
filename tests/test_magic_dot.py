@@ -124,3 +124,39 @@ def test_fully():
     nt = namedtuple("NT", "x")(1)
     md = MagicDot([None, nt, nt], exception=True)
     assert md.x.get(0) == [0, 1, 1]
+
+def test_pie():
+    """Test that TypeError is raised when iterating over non-data"""
+    md = MagicDot(1)
+    with pytest.raises(TypeError):
+        [x for x in md]
+
+def test_cat():
+    """Tests that TypeError is raised for valid non-iterable when iter_nf_as_empty() is set"""
+    md = MagicDot(1, iter_nf_as_empty=True)
+    with pytest.raises(TypeError):
+        [x for x in md]
+
+def test_atom():
+    """Tests that TypeError is raised for NOT_FOUND by default"""
+    md = MagicDot(1).nonexistent
+    with pytest.raises(TypeError):
+        [x for x in md]
+
+def test_lesson():
+    """Tests that NOT_FOUND returns empty generator with iter_nf_as_empty"""
+    md = MagicDot(1, iter_nf_as_empty=True).nonexistent
+    assert [x for x in md] == []
+
+def test_layers():
+    """Tests that NOT_FOUND returns empty generator with iter_nf_as_empty()"""
+    md = MagicDot(1).nonexistent.iter_nf_as_empty()
+    assert [x for x in md] == []
+
+def test_trace():
+    """Tests ability to walk iterable data."""
+    nt = namedtuple("NT", "x")(1)
+    md = MagicDot([None, nt, nt])
+    expected = [NOT_FOUND, 1, 1]
+    for x in md.x:
+        assert x.get() == expected.pop(0)
