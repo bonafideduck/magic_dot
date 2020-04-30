@@ -27,61 +27,20 @@ def test_other():
     md = MagicDot({"num": 1})
     assert md.bubba.get("something") == "something"
 
-
-def test_square():
-    """Test list processing is enabled by default."""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt])
-    assert md.x.get() == [NOT_FOUND, 1, 1]
-
-
-def test_two():
-    """Test that list processing is disabled from parameter"""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt], lists=False)
-    assert md.x.get() is NOT_FOUND
-
-
-def test_carbon():
-    """Test that list processing runs when enabled as a call"""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt])
-    assert md.lists().x.get() == [NOT_FOUND, 1, 1]
-
-
-def test_weak():
-    """Test that list processing is disabled with a parameter"""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt])
-    assert md.lists(False).x.get() is NOT_FOUND
-
-
-def test_house():
-    """Test that list processing replaces NOT_FOUND with defaults"""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt])
-    assert md.x.get(0) == [0, 1, 1]
-
-
-def test_son():
-    """Test that lists(False) does not replace a NOT_FOUND in a list NOT_FOUND value with defaults"""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt])
-    assert md.x.lists(False).get(0) == [NOT_FOUND, 1, 1]
-
+def test_coat():
+    """Test that attributes are extracted first."""
+    class AttrKey(dict):
+        a = 7
+    ak = AttrKey()
+    ak['a'] = 8
+    md = MagicDot(ak)
+    assert md.a.get() == 7
 
 def test_ride():
     """Test that indexed processing happens by default."""
     nt = namedtuple("NT", "x")(1)
     md = MagicDot([nt, None, nt])
     assert md[1].get() is None
-
-
-def test_date():
-    """Test that indexed processing happens when lists is disabled."""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([nt, None, nt])
-    assert md.lists(False)[1].get() is None
 
 
 def test_both():
@@ -95,35 +54,13 @@ def test_been():
     """Test that exception is enabled with exception."""
     md = MagicDot({})
     with pytest.raises(NotFound):
-        md.exception().nonexistent.get()
+        md.exception().nonexistent
 
 
 def test_curve():
-    """Test that exception is enabled with exception after attribute."""
+    """Test that exception does not affect the get after NOT_FOUND is detected."""
     md = MagicDot({})
-    with pytest.raises(NotFound):
-        md.nonexistent.exception().get()
-
-
-def test_hair():
-    """Test that exception does not happen with a default."""
-    md = MagicDot({}, exception=True)
-    assert md.nonexistent.get(0) == 0
-
-
-def test_hay():
-    """Test that exception happens in list processing."""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt], exception=True)
-    with pytest.raises(NotFound):
-        md.x.get()  # ([NOT_FOUND, 1, 1])
-
-
-def test_fully():
-    """Test that exception does not happen if list processing replaces NOT_FOUND with defaults"""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt], exception=True)
-    assert md.x.get(0) == [0, 1, 1]
+    md.nonexistent.exception().get()
 
 def test_pie():
     """Test that TypeError is raised when iterating over non-data"""
@@ -155,8 +92,93 @@ def test_layers():
 
 def test_trace():
     """Tests ability to walk iterable data."""
-    nt = namedtuple("NT", "x")(1)
-    md = MagicDot([None, nt, nt])
-    expected = [NOT_FOUND, 1, 1]
-    for x in md.x:
+    md = MagicDot([None, 1, 2])
+    expected = [None, 1, 2]
+    for x in md:
         assert x.get() == expected.pop(0)
+
+def test_sign():
+    """Tests ability to walk iterable data."""
+    md = MagicDot([None, 1, 2])
+    expected = [None, 1, 2]
+    for x in md:
+        assert x.get() == expected.pop(0)
+
+def test_sign():
+    """Tests pluck of attributes and nonexistent data."""
+    nt = namedtuple("NT", "x")(1)
+    md = MagicDot([nt, None, nt])
+    assert md.pluck("x").get() == [1, NOT_FOUND, 1] 
+
+def test_money():
+    """Tests pluck of keys and nonexistent data."""
+    d = {"x": 1}
+    md = MagicDot([d, None, d])
+    assert md.pluck("x").get() == [1, NOT_FOUND, 1]
+
+def test_whistle():
+    """Tests pluck of nonexistent data raises TypeError"""
+    md = MagicDot(1)
+    with pytest.raises(TypeError):
+        md.nonexistent.pluck('z')
+
+def test_neighborhood():
+    """Tests that pluck of nonexistent data with .iter_nf_as_empty returns empty."""
+    md = MagicDot(1)
+    assert md.nonexistent.iter_nf_as_empty().pluck('whatevs').get() == []
+
+def test_vote():
+    """Tests that pluck of noniterable gives type_error"""
+    md = MagicDot(1)
+    with pytest.raises(TypeError):
+        md.pluck('z')
+
+def test_vote():
+    """Tests that pluck of noniterable gives type_error even if .iter_nf_as_empty is set."""
+    md = MagicDot(1)
+    with pytest.raises(TypeError):
+        md.iter_nf_as_empty().pluck('z')
+
+def test_yellow():
+    """Test that a pluck of NOT_FOUND data raises an NotFound exception if .exception is set"""
+    nt = namedtuple("NT", "x")(1)
+    md = MagicDot([nt, None, nt])
+    with pytest.raises(NotFound):
+        md.exception().pluck("x")
+
+def test_supply():
+    """Test that boolean math is not allowed with magic_dot."""
+    md = MagicDot(1)
+    with pytest.raises(RuntimeError):
+        not md
+
+def test_important():
+    """Test that boolean math is not allowed on NOT_FOUND"""
+    md = MagicDot(1)
+    with pytest.raises(RuntimeError):
+        not md.nonexistent.get()
+
+def test_in():
+    """Test that repr for NOT_FOUND works nicely (for documentation)."""
+    md = MagicDot(1)
+    assert repr(md.nonexistent.get()) == "magic_dot.NOT_FOUND"
+
+def test_gate():
+    """Test that setting exception creates a new md"""
+    md = MagicDot(1)
+    assert md is not md.exception()
+
+def test_bowl():
+    """Test that setting exception twice does note create a new md"""
+    md = MagicDot(1, exception=True)
+    assert md is md.exception()
+
+def test_solve():
+    """Test that setting iter_nf_as_empty creates a new md"""
+    md = MagicDot(1)
+    assert md is not md.iter_nf_as_empty()
+
+def test_reader():
+    """Test that setting iter_nf_as_empty twice does note create a new md"""
+    md = MagicDot(1, iter_nf_as_empty=True)
+    assert md is md.iter_nf_as_empty()

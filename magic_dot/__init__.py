@@ -23,29 +23,36 @@ NOT_FOUND = _NotFound()
 
 
 class MagicDot:
-    """A wrapper that allows data extraction without all the `try` and `except` overhead."""
+    """A wrapper that allows data extraction without all the `try` and `except` overhead.
 
-    def __init__(self, data: Any, lists: bool = True, exception: bool = False, iter_nf_as_empty: bool = False):
+    Args:
+        data: The data to be wrapped by MagicDot
+        exception: Selects if an exception is raised when get() would return magic_dot.NOT_FOUND
+        iter_nf_as_empty: Selects if iterating over NOT_FOUND should return an empty iterator.
+
+    Note:
+        The MagicDot class has no public attributes.  Any access to an attribute will be
+        mapped to the underlying data and used to extract a new MagicDot structure.
+    """
+
+    def __init__(self, data: Any, exception: bool = False, iter_nf_as_empty: bool = False):
         """Main data wrapper for the MagicDot module
 
         Args:
            data: The data to be wrapped by MagicDot
-           lists: Selects if expanded list support is enabled (see MagicDot.lists for more info.)
-           exception: Selects if an exception is raised when get() would return magic_dot.NOT_FOUND
+           exception: Selects if an exception is raised when magic_dot.NOT_FOUND would be assigned.
            iter_nf_as_empty: Selects if iterating over NOT_FOUND should return an empty iterator.
         """
         self.__data = data
-        self.__lists = lists
         self.__exception = exception
         self.__iter_nf_as_empty = iter_nf_as_empty
 
     def __create_child(
-        self, data, lists: Optional[bool] = None, exception: Optional[bool] = None, iter_nf_as_empty: Optional[bool] = None
+        self, data, exception: Optional[bool] = None, iter_nf_as_empty: Optional[bool] = None
     ):
-        lists = self.__lists if lists is None else lists
         exception = self.__exception if exception is None else exception
         iter_nf_as_empty = self.__iter_nf_as_empty if iter_nf_as_empty is None else iter_nf_as_empty
-        return MagicDot(data, lists=lists, exception=exception, iter_nf_as_empty=iter_nf_as_empty)
+        return MagicDot(data, exception=exception, iter_nf_as_empty=iter_nf_as_empty)
 
     def __bool__(self):
         raise RuntimeError(
@@ -55,60 +62,24 @@ class MagicDot:
     def __getattr__(self, name):
         data = NOT_FOUND
 
-        if hasattr(self.__data, name):
+        try:
             data = getattr(self.__data, name)
-
-        elif isinstance(self.__data, dict):
-            data = self.__data.get(name, NOT_FOUND)
-
-        elif data is NOT_FOUND and isinstance(self.__data, list) and self.__lists:
-            data_list = []
-            empties = 0
-            for data in self.__data:
-                if hasattr(data, name):
-                    d = getattr(data, name)
-                elif isinstance(data, dict):
-                    d = data.get(name, NOT_FOUND)
-                else:
-                    d = NOT_FOUND
-                if data_list:
-                    data_list.append(d)
-                elif d is not NOT_FOUND:
-                    data_list = [NOT_FOUND] * empties + [d]
-                else:
-                    empties += 1
-
-            if data_list:
-                data = data_list
-            else:
-                data = NOT_FOUND
-
+        except AttributeError:
+            try:
+                return self.__getitem__(name)
+            except NotFound:
+                raise NotFound from None
+                    
         return self.__create_child(data)
 
     def __getitem__(self, key):
-        data = NOT_FOUND
         try:
             data = self.__data[key]
         except (AttributeError, KeyError, TypeError):
-            if data is NOT_FOUND and isinstance(self.__data, list) and self.__lists:
-                data_list = []
-                empties = 0
-                for data in self.__data:
-                    try:
-                        d = self.data[key]
-                    except (AttributeError, KeyError, TypeError):
-                        d = NOT_FOUND
-                    if data_list:
-                        data_list.append(d)
-                    elif d is not NOT_FOUND:
-                        data_list = [NOT_FOUND] * empties + [d]
-                    else:
-                        empties += 1
-
-                if data_list:
-                    data = data_list
-                else:
-                    data = NOT_FOUND
+            if self.__exception:
+                raise NotFound from None
+            else:
+                data = NOT_FOUND
 
         return self.__create_child(data)
         
@@ -132,35 +103,30 @@ class MagicDot:
             return (self.__create_child(x) for x in self.__data)
 
 
-    def lists(self, lists: bool = True) -> "MagicDot":
-        """Enable or disable expanded list support.
-
-        When lists is enabled, if this has no key matches causing NOT_FOUND, 
-        and the data is a list, the list contents will be searched for key matches
-        If anything matches, a list containing extracted values will be created.  If 
-        at least one, but not all list items have a match, the nonmatching items will
-        be replaced with NOT_FOUND.
-
-        Args:
-            lists: Enable or disable spanning of lists.
-
-        Returns:
-            If the lists changes, a new MagicDot will be returned.  Otherwise,
-            this returns self.
-        """
-        if self.__lists == lists:
-            return self
-        else:
-            return self.__create_child(self.__data, lists=lists)
-
     def exception(self, exception: bool = True) -> "MagicDot":
-        """Enable or disable exceptions when NOT_FOUND is encountered in a get().
+        """Enable or disable exceptions when NOT_FOUND is encountered.
+
+        NOT_FOUND is encountered whenever code extracts additional data
+        from the encapsulated data.  Some examples would be: :::
+
+          >>> from magic_dot import MagicDot
+          >>> md = MagicDot([1])
+          >>> md = md.exception()
+          >>> md['nonexistent']
+          (raises magic_dot.exceptions.NotFound)
+          >>> md.nonexistent
+          (raises magic_dot.exceptions.NotFound)
+          >>> md.pluck('nonexistent')
+          (raises magic_dot.exceptions.NotFound)
+          
+        Without exceptions enabled, the above would respectively return
+        MagicDot(NOT_FOUND), MagicDot(NOT_FOUND) and MagicDot([NOT_FOUND]).
 
         Args:
-            exception: Enable or disable exceptions on a get().
+            exception: Enable or disable exceptions when NOT_FOUND is encountered.
 
         Returns:
-            If the lists changes, a new MagicDot will be returned.  Otherwise,
+            If the exception changes, a new MagicDot will be returned.  Otherwise,
             this returns self.
         """
         if self.__exception == exception:
@@ -171,11 +137,25 @@ class MagicDot:
     def iter_nf_as_empty(self, iter_nf_as_empty: bool = True) -> "MagicDot":
         """Enable or disable empty iterator support for NOT_FOUND data.
 
+        By default, if a request is made to iterate over a NOT_FOUND, a
+        TypeError is raised.  With this set, the iteration will act as
+        if this was an empty array. :::
+
+            >>> from magic_dot import MagicDot
+            >>> x = MagicDot(1)
+            >>> for y in x.nonexistent:
+            >>>    ...
+            (Raises TypeError)
+            >>> x = MagicDot(1).iter_nf_as_empty()
+            >>> for y in x.nonexistent:
+            >>>    ...
+            (Skips the contents of the for loop.)
+
         Args:
             iter_nf_as_empty: Enable or Disable
 
         Returns:
-            If the lists changes, a new MagicDot will be returned.  Otherwise,
+            If the iter_nf_as_empty changes, a new MagicDot will be returned.  Otherwise,
             this returns self.
         """
         if self.__iter_nf_as_empty == iter_nf_as_empty:
@@ -184,31 +164,57 @@ class MagicDot:
             return self.__create_child(self.__data, iter_nf_as_empty=iter_nf_as_empty)
 
 
-    def get(self, not_found: Any = NOT_FOUND, exception: bool = None):
-        """Gets the data held within this MagicDot.
+    def get(self, not_found: Any = NOT_FOUND):
+        """Gets the encapsulated data in this MagicDot.
 
-        Typically, this is either the data or NOT_FOUND.  If lists is enabled (the default)
-        and the data is a list this will also replace any NOT_FOUND values within the first
-        level of that list with `not_found`.
+        This is either the encapsulated data or NOT_FOUND if extraction 
+        failed.
 
         Args:
-           data: The data to be wrapped by MagicDot
-           lists: Selects if expanded list support is enabled (see MagicDot.lists for more info.)
-           exception: Selects if an exception is raised when this would return magic_dot.NOT_FOUND
+           default: Selects what to return if the encapsulated data was NOT_FOUND.
 
         Returns:
-            The data held withing this MagicDot instance.
+            The encaapsulated data in this MagicDot instance.
         """
-        exception = self.__exception if exception is None else exception
-
+        
         if self.__data is NOT_FOUND:
-            if exception and not_found is NOT_FOUND:
-                raise NotFound
             return not_found
-        elif isinstance(self.__data, list) and self.__lists:
-            if not_found is not NOT_FOUND:
-                return [d if d is not NOT_FOUND else not_found for d in self.__data]
-            if exception and NOT_FOUND in self.__data:
-                raise NotFound
-        return self.__data
+        else:
+            return self.__data
 
+    def pluck(self, name: str):
+        """Extracts **name** from an encapsulated data (which must be iterable) into an array.
+
+        For each item in the encapsulated data iterable, extract the named attribute
+        or key.  If they are not available, either extract NOT_FOUND or raise an exception
+        depending on the current .exception() configuration.
+
+        If the encapsulated date is not iterable and not NOT_FOUND, a TypeError will be raised.
+
+        If the encapsulated data is NOT_FOUND, either raise a TypeError, or return an empty list
+        depending on the .iter_nf_as_empty() setting.
+
+        Args:
+            text: The attribute or key to pluck from the array.
+
+        Returns:
+            A new MagicDot containing the resulting array with plucked data.            
+        """        
+
+        data = []
+        if not (self.__data == NOT_FOUND and self.__iter_nf_as_empty):
+            for x in self.__data:
+                try:
+                    d = getattr(x, name)
+                except AttributeError:
+                    try:
+                        d = x[name]
+                    except (AttributeError, KeyError, TypeError):
+                        if self.__exception:
+                            raise NotFound from None
+                        else:
+                            d = NOT_FOUND
+                data.append(d)
+
+        return self.__create_child(data)
+    
