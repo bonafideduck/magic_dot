@@ -27,7 +27,7 @@ class MagicDot:
 
     Args:
         data: The data to be wrapped by MagicDot
-        exception: Selects if an exception is raised when get() would return magic_dot.NOT_FOUND
+        exception: Selects if a NotFound exception to be raised when NOT_FOUND happens during extraction.
         iter_nf_as_empty: Selects if iterating over NOT_FOUND should return an empty iterator.
 
     Note:
@@ -36,13 +36,6 @@ class MagicDot:
     """
 
     def __init__(self, data: Any, exception: bool = False, iter_nf_as_empty: bool = False):
-        """Main data wrapper for the MagicDot module
-
-        Args:
-           data: The data to be wrapped by MagicDot
-           exception: Selects if an exception is raised when magic_dot.NOT_FOUND would be assigned.
-           iter_nf_as_empty: Selects if iterating over NOT_FOUND should return an empty iterator.
-        """
         self.__data = data
         self.__exception = exception
         self.__iter_nf_as_empty = iter_nf_as_empty
@@ -176,7 +169,7 @@ class MagicDot:
         Returns:
             The encaapsulated data in this MagicDot instance.
         """
-        
+
         if self.__data is NOT_FOUND:
             return not_found
         else:

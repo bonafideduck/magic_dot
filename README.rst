@@ -152,7 +152,7 @@ or key from the entire list.  The returned value is a MagicDot with the new pluc
 Future Enhancement
 ==================
 
-Future enhancements will be to support many of the `Underscore js` array and collection capabilities
+Future enhancements will be to support many of the `Underscore js`_ array and collection capabilities
 like ``compact``, ``reject``, and ``count``.
 
 .. _`Underscore js`: https://underscorejs.org/#arrays
